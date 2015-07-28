@@ -65,3 +65,4 @@ class Script(object):
 
 def acquire_configuration(config_location):
 	return config
+

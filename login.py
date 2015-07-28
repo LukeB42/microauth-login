@@ -8,6 +8,9 @@ Luke Brooks 2015
 import os
 import pwd
 import pty
+import sys
+import time
+import random
 import socket
 import _curses
 import getpass
@@ -15,10 +18,39 @@ import logging
 import subprocess
 from microauth.client import Client
 from microauth_login.config import acquire_configuration
-CONFIG_FILE = "/etc/login.conf"
-PASSWD_FILE = "/etc/passwd"
-
+CONFIG_FILE    = "/etc/login.conf"
+PASSWD_FILE    = "/etc/passwd"
+ORIGINAL_LOGIN = "/bin/login"
 DEBUG = True
+
+def parse_args():
+	usage = """
+%s [--test]
+	""" % sys.argv[0]
+
+	if len(sys.argv) == 2:
+		if sys.argv[1] == "--test":
+			config = acquire_configuration(CONFIG_FILE)
+			if not "server" in config:
+				print "No server defined."
+				raise SystemExit
+			if not "apikey" in config:
+				print "No API key defined."
+				raise SystemExit
+
+			uAuth = Client(config['apikey'], config['server'], verify=False)
+			try:
+				(resp, status) = uAuth.get("keys")
+			except Exception, e:
+				print "Error: %s" % e.message
+				raise SystemExit
+
+			if status == 200:
+				print "The authentication server is available."
+		elif sys.argv[1] in ['-h', '--help']:
+			print usage
+		raise SystemExit
+
 def log(message):
 	if DEBUG:
 		import pprint
@@ -132,7 +164,7 @@ def authenticate(username, password):
 		print "Authentication server currently unavailable."
 		return
 
-	if status == 200:
+	if resp == True and status == 200:
 		return(1)
 	return
 
@@ -151,7 +183,7 @@ def check_user_exists(username):
 			create_account(username)
 
 def run_default_login_program():
-	pass	
+	pty.spawn(ORIGINAL_LOGIN)
 
 def spawn_shell(username):
 	"""
@@ -184,11 +216,12 @@ def spawn_shell(username):
 	if not "TERM" in os.environ:
 		os.environ["TERM"]  = "dumb"
 
-
 	log("Changing UID")
 	os.setgid(int(gid))
 	os.setuid(int(uid))
 
+	if not os.path.isdir(home_dir):
+		home_dir = "/"
 	log("Moving into %s" % home_dir)
 	os.chdir(home_dir)
 
@@ -205,11 +238,12 @@ if __name__ == "__main__":
 		print "login: Cannot possibly work without effective root"
 		raise SystemExit
 
+	parse_args()
+
 	# The main loops that first keep asking for input on stdin and
 	# then check if the users shell can be spawned in their home directory.
-
-	user_home_dir_exists = False
-	while user_home_dir_exists == False:
+	user_exists = False
+	while user_exists == False:
 
 		success = None
 		while success == None:
@@ -220,10 +254,15 @@ if __name__ == "__main__":
 			(username, password) = prompt_for_login()
 			# Send the data over to microauth.
 			success              = authenticate(username, password)
+			if success == None:
+				# Throw in some random delay to avert timing attacks
+				sleepnum = str(random.randint(1,2)) + "." + str(random.randint(2,9))
+				time.sleep(float(sleepnum))
+				print "\nLogin incorrect"
 
 		# Write to utmp and syslog so the incident is available to lastlog et al.
 		log_attempt(success, username)
 		# Verify the account exists locally. Possibly create it if configured to.
-		user_home_dir_exists = check_user_exists(username)
+		user_exists = check_user_exists(username)
 
 	spawn_shell(username)
