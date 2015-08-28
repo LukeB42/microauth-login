@@ -84,7 +84,8 @@ def uninstall():
 	# move original login program
 
 	print "Removing symlink to microauth-login."
-	os.unlink("/bin/login")
+#	os.unlink("/bin/login")
+	os.remove("/bin/login")
 	print "Moving original login back into place."
 	shutil.move("/bin/original_login", "/bin/login")
 

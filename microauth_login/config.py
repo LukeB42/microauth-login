@@ -2,6 +2,7 @@
 This module acquires configuration data for the login and passwd utils.
 """
 import json
+import hashlib
 from microauth.client import Client
 
 CONFIG_FILE    = "/etc/login.conf"
@@ -25,14 +26,13 @@ class Script(object):
     Scripts can also call any methods on objects put in their environment.
     """
     def __init__(self, file=None, env={}):
-        self.read_on_exec = app.debug
+        self.read_on_exec = True
         self.file = file
         self.env = env
         self.script = ''
         self.code = None
         self.hash = None
         self.cache = {
-            'app': app
         }
 
     def execute(self, env={}):
@@ -87,3 +87,5 @@ def acquire_configuration():
 
 	return config
 
+def sha1sum(s):
+	return hashlib.sha1(s).hexdigest()
