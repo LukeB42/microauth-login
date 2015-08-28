@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 This program defines a drop-in replacement for the UNIX login package,
-for systems to authenticate to a single microauth instance.
+for systems to authenticate to a single Microauth instance.
 
 Luke Brooks 2015
 """
@@ -18,9 +18,7 @@ import logging
 import subprocess
 from microauth.client import Client
 from microauth_login.config import acquire_configuration
-CONFIG_FILE    = "/etc/login.conf"
-PASSWD_FILE    = "/etc/passwd"
-ORIGINAL_LOGIN = "/bin/login"
+
 DEBUG = True
 
 def parse_args():
@@ -30,7 +28,7 @@ def parse_args():
 
 	if len(sys.argv) == 2:
 		if sys.argv[1] == "--test":
-			config = acquire_configuration(CONFIG_FILE)
+			config = acquire_configuration()
 			if not "server" in config:
 				print "No server defined."
 				raise SystemExit
@@ -152,7 +150,7 @@ def authenticate(username, password):
 		return
 
 	# Perform the actual authentication.
-	# It is in this section that you would want to upload data from
+	# It's in this section that you would want to upload data from
 	# hardware peripherals to make use of key-based authentication.
 	try:
 		(resp, status) = uAuth.post('users/%s/login' % username, {"password":password})
@@ -249,7 +247,8 @@ if __name__ == "__main__":
 		while success == None:
 			# Overlay some sensible defaults with whatever's in CONFIG_FILE
 			# and possibly poll our remote microauth instance for settings.
-			config               = acquire_configuration(CONFIG_FILE)
+			config               = acquire_configuration()
+
 			# Read STDIN in an infinite loop. Ignore all signals.
 			(username, password) = prompt_for_login()
 			# Send the data over to microauth.

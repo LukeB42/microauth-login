@@ -1,4 +1,12 @@
-# Default configuration settings for microauth-login
+"""
+This module acquires configuration data for the login and passwd utils.
+"""
+import json
+from microauth.client import Client
+
+CONFIG_FILE    = "/etc/login.conf"
+PASSWD_FILE    = "/etc/passwd"
+ORIGINAL_LOGIN = "/bin/login"
 
 config = {
     "server":               "https://localhost:7789/v1/",
@@ -7,10 +15,7 @@ config = {
     "permit_root_logon":    0,       # don't handle authenticating as the superuser
     "create_accounts":      1,       # create accounts for successful users?
     "defer_to_original":    1,       # should we use the original program if the server is unavailable?
-    "limit":                "5,30m", # retry limit
     "allow_groups":         ["shell"],
-    "deny_groups":          ["nologin"],
-    "priority":             "deny",
 }
 
 class Script(object):
@@ -63,6 +68,22 @@ class Script(object):
 	def keys(self):
 		return self.env.keys()
 
-def acquire_configuration(config_location):
+def acquire_configuration():
+
+	# CONFIG file should return a dictionary named config
+	# it permits you to determine values programatically
+	config_program = Script(CONFIG_FILE)
+	config_program.execute()
+	config = config_program['config']
+	
+	if 'use_remote_settings' in config and config['use_remote_settings']:
+		client = Client(config['key'], config['server'])
+		(remote_config, status_code) = client.get("config")
+		if status_code == 200:
+			for key, value in remote_config.items():
+				if key in ['apikey', 'server']:
+					continue
+				config[key] = value
+
 	return config
 
