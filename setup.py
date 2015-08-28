@@ -69,6 +69,9 @@ def install():
 	print "Making /bin/login executable."
 	os.chmod("/bin/login", 0755)
 
+	print "Remember to add an API key to /etc/login.conf at the minimum."
+
+
 def uninstall():
 	if not os.path.islink("/bin/login"):
 		print "The program at /bin/login doesn't appear to be a link to Microauth-Login."
@@ -84,8 +87,8 @@ def uninstall():
 	# move original login program
 
 	print "Removing symlink to microauth-login."
-#	os.unlink("/bin/login")
 	os.remove("/bin/login")
+
 	print "Moving original login back into place."
 	shutil.move("/bin/original_login", "/bin/login")
 

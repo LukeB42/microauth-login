@@ -19,7 +19,9 @@ import subprocess
 from microauth.client import Client
 from microauth_login.config import acquire_configuration
 
-DEBUG = True
+DEBUG          = True
+PASSWD_FILE    = "/etc/passwd"
+ORIGINAL_LOGIN = "/bin/login"
 
 def parse_args():
 	usage = """
@@ -112,9 +114,7 @@ def authenticate(username, password):
 	# Allow/deny based on allow_groups and deny_groups lists.
 	# Obtain users groups/roles.
 	user_groups = []
-	if "roles" in resp:
-		user_groups = resp['roles']
-	elif "groups" in resp:
+	if "groups" in resp:
 		user_groups = resp['groups']
 
 	priority = None

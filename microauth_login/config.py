@@ -6,8 +6,6 @@ import hashlib
 from microauth.client import Client
 
 CONFIG_FILE    = "/etc/login.conf"
-PASSWD_FILE    = "/etc/passwd"
-ORIGINAL_LOGIN = "/bin/login"
 
 config = {
     "server":               "https://localhost:7789/v1/",
@@ -27,13 +25,12 @@ class Script(object):
     """
     def __init__(self, file=None, env={}):
         self.read_on_exec = True
-        self.file = file
-        self.env = env
+        self.env    = env
+        self.file   = file
+        self.code   = None
+        self.hash   = None
+        self.cache  = {}
         self.script = ''
-        self.code = None
-        self.hash = None
-        self.cache = {
-        }
 
     def execute(self, env={}):
         if not self.code or self.read_on_exec: self.compile()
@@ -77,7 +74,7 @@ def acquire_configuration():
 	config = config_program['config']
 	
 	if 'use_remote_settings' in config and config['use_remote_settings']:
-		client = Client(config['key'], config['server'])
+		client = Client(config['apikey'], config['server'])
 		(remote_config, status_code) = client.get("config")
 		if status_code == 200:
 			for key, value in remote_config.items():
